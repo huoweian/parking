@@ -5,21 +5,21 @@ char pcd_config[9];
 int  g_buz;
 
 char *province[] = {"粤", "赣", "湘", "鄂", "贵",
-		    		"黑", "沪", "京", "蒙", "藏",
-				    "甘", "豫", "鲁", "晋", "桂",
-				    "云", "滇", "辽", "川", "闵",
-				    "徽", "苏", "津", "吉", "冀",
-				    "陕", "宁", "浙", "渝", "琼",
-				    "港", "澳", "台"};
+		    "黑", "沪", "京", "蒙", "藏",
+		    "甘", "豫", "鲁", "晋", "桂",
+		    "云", "滇", "辽", "川", "闵",
+		    "徽", "苏", "津", "吉", "冀",
+		    "陕", "宁", "浙", "渝", "琼",
+		    "港", "澳", "台"};
 
 char alphanumeric[] = { 'A', 'B', 'C', 'D', 'E',
-						'F', 'G', 'H', 'I', 'J',
-						'K', 'L', 'M', 'N', 'O',
-						'P', 'Q', 'R', 'S', 'T',
-						'U', 'V', 'W', 'X', 'Y',
-						'Z', '0', '1', '2', '3',
-						'4', '5', '6', '7', '8',
-						'9', '0'};
+			'F', 'G', 'H', 'I', 'J',
+			'K', 'L', 'M', 'N', 'O',
+			'P', 'Q', 'R', 'S', 'T',
+			'U', 'V', 'W', 'X', 'Y',
+			'Z', '0', '1', '2', '3',
+			'4', '5', '6', '7', '8',
+			'9', '0'};
 
 // 设置窗口参数:9600速率
 void init_tty(int fd)
@@ -168,7 +168,7 @@ char *total_time(char *time_in, char *now)
 	#define SEC  5
 	int val_time_in[6], val_now[6];
 
-	char *delim = "/: ";
+	char *delim = "-: \t";
 
 	char *p = strtok(time_in, delim);
 	int i;
@@ -177,7 +177,6 @@ char *total_time(char *time_in, char *now)
 		if(p != NULL)
 		{
 			val_time_in[i] = atoi(p);
-
 			p = strtok(NULL, delim);
 		}
 	}
@@ -188,27 +187,114 @@ char *total_time(char *time_in, char *now)
 		if(p != NULL)
 		{
 			val_now[i] = atoi(p);
-
 			p = strtok(NULL, delim);
 		}
 	}
 
-	static char ret[64];
-	bzero(ret, 64);
+	int year = val_now[YEAR] - val_time_in[YEAR];
+	int mon  = val_now[MON]  - val_time_in[MON];
+	int mday = val_now[MDAY] - val_time_in[MDAY];
+	int hour = val_now[HOUR] - val_time_in[HOUR];
+	int min  = val_now[MIN]  - val_time_in[MIN];
+	int sec  = val_now[SEC]  - val_time_in[SEC];
 
-	snprintf(ret, 64, "%d年%d月%d日 %d时%d分%d秒",
-						val_now[YEAR] - val_time_in[YEAR],
-						val_now[MON]  - val_time_in[YEAR],
-						val_now[MDAY] - val_time_in[MDAY],
-						val_now[HOUR] - val_time_in[HOUR],
-						val_now[MIN]  - val_time_in[MIN],
-						val_now[SEC]  - val_time_in[SEC]);
+	static char ret[64];
+	static char dis[64];
+	bzero(ret, 64);
+	bzero(dis, 64);
+
+	if(year != 0)
+	{
+		snprintf(ret+strlen(ret), 64-strlen(ret), "%dY", year);
+		snprintf(dis+strlen(dis), 64-strlen(dis), "%d年", year);
+	}
+	if(mon  != 0)
+	{
+		snprintf(ret+strlen(ret), 64-strlen(ret), "%dM", mon);
+		snprintf(dis+strlen(dis), 64-strlen(dis), "%d月", mon);
+	}
+	if(mday != 0)
+	{
+		snprintf(ret+strlen(ret), 64-strlen(ret), "%dD", mday);
+		snprintf(dis+strlen(dis), 64-strlen(dis), "%d日", mday);
+	}
+
+	if(hour != 0)
+	{
+		snprintf(ret+strlen(ret), 64-strlen(ret), "%dH", hour);
+		snprintf(dis+strlen(dis), 64-strlen(dis), "%d时", hour);
+	}
+	if(min  != 0)
+	{
+		snprintf(ret+strlen(ret), 64-strlen(ret), "%dm", min);
+		snprintf(dis+strlen(dis), 64-strlen(dis), "%d分", min);
+	}
+	if(sec  != 0)
+	{
+		snprintf(ret+strlen(ret), 64-strlen(ret), "%dS", sec);
+		snprintf(dis+strlen(dis), 64-strlen(dis), "%d秒", sec);
+	}
+
+	printf("停车时长：%s\n", dis);
+
 	return ret;
 }
 
 int cal_fee(char *total)
 {
-	return 48;
+	assert(total);
+
+	// 停车费用政策：￥1/秒，上不封顶（贵吧！）
+	int fee = 0;
+	char *p, *q;
+
+	fee = atoi(strtok(total, "S"));
+	
+	/*
+	if(strstr(total, "Y"))
+	{
+		p = strtok(total, "Y");
+		if(p != NULL)
+			fee += (atoi(p)*365*24*60*60);
+	}
+
+	if(strstr(total, "M"))
+	{
+		p = strtok(NULL, "M");
+		if(p != NULL)
+			fee += (atoi(p)*30*24*60*60);
+	}
+
+	if(strstr(total, "D"))
+	{
+		p = strtok(NULL, "D");
+		if(p != NULL)
+			fee += (atoi(p)*24*60*60);
+	}
+
+	if(strstr(total, "H"))
+	{
+		p = strtok(NULL, "H");
+		if(p != NULL)
+			fee += (atoi(p)*60*60);
+	}
+	
+	if(strstr(total, "m"))
+	{
+		p = strtok(NULL, "m");
+		if(p != NULL)
+			fee += (atoi(p)*60);
+	}
+
+	if(strstr(total, "S"))
+	{
+		p = strtok(NULL, "S");
+		if(p != NULL)
+			fee += (atoi(p));
+	}
+	*/
+
+	return fee;
 }
 
 void *routine(void *arg)
@@ -256,11 +342,11 @@ void *routine(void *arg)
 				time_t t = time(NULL);
 				char *now = calloc(1, 64);
 				struct tm *p = localtime(&t);
-				snprintf(now, 64, "%d/%d/%d %02d:%02d:%02d",
-									p->tm_year+1900, p->tm_mon+1, p->tm_mday,
-									p->tm_hour, p->tm_min, p->tm_sec);
+				snprintf(now, 64, "%d-%d-%d %02d:%02d:%02d",
+						p->tm_year+1900, p->tm_mon+1, p->tm_mday,
+						p->tm_hour, p->tm_min, p->tm_sec);
 
-				fprintf(stderr, "出场时间: %s\n", now);
+				fprintf(stderr, "入场时间: %s\n", time_in);
 
 				char *total = total_time(time_in, now);
 				fprintf(stderr, "停车时长: %s\n", total);
@@ -270,7 +356,7 @@ void *routine(void *arg)
 			}
 			else
 			{
-				fprintf(stderr, "\n此卡未进场.\n");
+				fprintf(stderr, "\n此卡【未进场】.\n");
 
 				// 短哔五声表示失败
 				beep(g_buz, 0.1); usleep(50*1000);
@@ -320,10 +406,10 @@ int main(void)
 
 	char *errmsg;
 	char *create =  "create table if not exists "
-								"carinfo(cardid  text primary key, "
-										"licence text, "
-										"time_in text not null, "
-										"photo   text);";
+			"carinfo(cardid  text primary key, "
+			"licence text, "
+			"time_in text not null, "
+			"photo   text);";
 	if(sqlite3_exec(db, create, NULL, NULL, &errmsg) != SQLITE_OK)
 	{
 		fprintf(stderr, "SQL error: %s\n", errmsg);
@@ -406,7 +492,7 @@ int main(void)
 			}
 			else
 			{
-				fprintf(stderr, "\n此卡已进场.\n");
+				fprintf(stderr, "\n此卡【已进场】.\n");
 
 				// 短哔五声表示失败
 				beep(g_buz, 0.1); usleep(50*1000);

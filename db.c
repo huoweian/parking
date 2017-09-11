@@ -9,7 +9,6 @@ int __callback(void *arg, int cols, char **col_value, char **col_name)
 	char ***pointers = (char ***)arg;
 
 	count = cols;
-	printf("count: %d\n", count);
 
 	if(count == 0)
 	{
@@ -17,20 +16,25 @@ int __callback(void *arg, int cols, char **col_value, char **col_name)
 	}
 
 	int i;
+	printf("\n++++++++ 一路顺风！++++++++ \n");
 	for(i=0; i<cols; i++)
 	{
-		printf("%s\t", col_name[i]);
+		printf("%s: ", col_name[i]);
+		printf("%s\n", col_value[i]);
 	}
-	printf("\n");
+	printf("+++++++++++++++++++++++++++\n");
 
 
-	for(i=0; i<cols; i++)
-	{
-		printf("%s\t", col_value[i]);
-	}
+	static char licence[64];
+	static char time_in[64];
 
-	*pointers[0] = col_value[1]; // licence
-	*pointers[1] = col_value[2]; // time_in
+	bzero(licence, 64);
+	bzero(time_in, 64);
+	snprintf(licence, 64, "%s", col_value[1]);
+	snprintf(time_in, 64, "%s", col_value[2]);
+
+	*pointers[0] = licence; // licence
+	*pointers[1] = time_in; // time_in
 
 	printf("\n");
 }
@@ -43,12 +47,14 @@ bool start_charging(sqlite3 *db, char *licence, int cardid, char *photo_path)
 	time_t t = time(NULL);
 	char *now = calloc(1, 64);
 	struct tm *p = localtime(&t);
-	snprintf(now, 64, "%d/%d/%d %02d:%02d:%02d", p->tm_year+1900, p->tm_mon+1, p->tm_mday,
+	snprintf(now, 64, "%d-%d-%d %02d:%02d:%02d", p->tm_year+1900, p->tm_mon+1, p->tm_mday,
 										   p->tm_hour, p->tm_min, p->tm_sec);
 
 	char *sql = calloc(1, 128);
-	snprintf(sql, 128, "insert into \"carinfo\" values('%#.8x', '%s', '%s', '%s');",
-			cardid, licence, now, photo_path);
+	//snprintf(sql, 128, "insert into \"carinfo\" values('%#.8x', '%s', '%s', '%s');",
+	//		cardid, licence, now, photo_path);
+	snprintf(sql, 128, "insert into \"carinfo\" values('%#.8x', '%s', %s, '%s');",
+			cardid, licence, "current_timestamp", photo_path);
 
 	char *errmsg;
 	if(sqlite3_exec(db, sql, NULL, NULL, &errmsg) != SQLITE_OK)
@@ -56,6 +62,7 @@ bool start_charging(sqlite3 *db, char *licence, int cardid, char *photo_path)
 		return false;
 	}
 
+	system("clear");
 	printf("\n******* 欢迎光临! ******* \n");
 	printf("进场时间：%s\n", now);
 	printf("卡号：%#.8x\n", cardid);

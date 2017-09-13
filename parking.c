@@ -1,4 +1,20 @@
-﻿#include "common.h"
+﻿///////////////////////////////////////////////////////////
+//
+//  Copyright(C), 2013-2017, GEC Tech. Co., Ltd.
+//
+//  文件: parking/parking.c
+//  日期: 2017-9
+//  描述: 停车场计费系统，功能：
+//        A) 刷卡进场，并拍照留档，重复刷卡无效
+//        B) 刷卡出场，自动计算费用，重复刷卡无效
+//
+//  作者: Vincent Lin (林世霖)   微信公众号：秘籍酷
+//  技术微店: http://weidian.com/?userid=260920190
+//  技术交流: 260492823（QQ群）
+//
+///////////////////////////////////////////////////////////
+
+#include "common.h"
 
 char get_dev_info[8];
 char pcd_config[9];
@@ -76,7 +92,7 @@ unsigned char CalBCC(unsigned char *buf, int n)
 
 void beep(int buz, float microsec)
 {
-	ioctl(buz, 0, 1);	
+	ioctl(buz, 0, 1);
 	usleep(microsec * 1000*1000);
 	ioctl(buz, 1, 1);
 }
